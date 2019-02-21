@@ -1,0 +1,122 @@
+<html>
+    <head>
+        <style>
+            button {
+                background-color: rgb(76, 175, 80); /* Green */
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                margin: 4px 2px;
+                cursor: pointer;
+                font-size: 24px;
+                position: absolute;
+            }
+            button:hover {
+                background-color: rgb(8, 53, 9); /* Darker Green */
+            }
+        </style>
+
+    </head>
+<body>
+    <p id="buttons"></p>
+    <div id="pianokeys"></div>
+    <p id="presstxt"></p>
+
+    <script>
+
+        // Fisher-Yates shuffle code from Mike Bostock
+        // https://bost.ocks.org/mike/shuffle/
+        function shuffle(array) {
+            var m = array.length, t, i;
+            // While there remain elements to shuffle…
+            while (m) {
+                // Pick a remaining element…
+                i = Math.floor(Math.random() * m--);
+                // And swap it with the current element.
+                t = array[m];
+                array[m] = array[i];
+                array[i] = t;
+            }
+            return array;
+        }
+
+
+        // Step 1: Add all piano keys as hidden HTML5 elements
+        // Keys are numbered starting at A0 (index 0)
+        // with all halfsteps up to C8 (index 87)
+        keys_display = document.getElementById("pianokeys");
+        keys = [];
+        keysorder = [];
+        for (var i = 0; i < 88; i++) {
+            var key = document.createElement("audio");
+            key.src = "PianoKeys/" + i + ".mp3";
+            keys_display.appendChild(key);
+            keys.push(key);
+            keysorder.push(i);
+        }
+
+        /* Step 2: Create a random permutation of the keys
+           The first 5 keys in this sequence will be
+           mapped to the buttons.  Setup a button listener
+           to handle when these keys are pressed
+           (TODO: You will probably want something smarter
+           than a random sequence of 5 keys)*/
+        keysorder = shuffle(keysorder);
+        // Define a "presstxt" element where results will
+        // be output to the page (TODO: want to save them to database)
+        presstxt = document.getElementById("presstxt");
+        presstxt.style.top="400px";
+        buttonListener = function(evt) {
+            var thiskey = evt.target.pianokey;
+            for (var i = 0; i < 5; i++) {
+                // Quiet all other keys
+                if (i != thiskey) {
+                    keys[keysorder[i]].pause();
+                }
+                keys[keysorder[i]].currentTime = 0;
+            }
+            keys[thiskey].play();
+            hit_keys.push(thiskey);
+            // Times are reported as number of milliseconds elapsed since
+            // midnight on January 1, 1970:
+            // https://www.w3schools.com/jsref/jsref_gettime.asp
+            // (the easiest way to get timings is subtract from the earliest one)
+            var d = new Date();
+            hit_times.push(d.getTime());
+            presstxt.innerHTML += "<BR>Key " + thiskey + " pressed at " + hit_times[hit_times.length-1];
+        }
+
+        // Step 3: Add all buttons to HTML DOM
+        var buttons = document.getElementById("buttons");
+        for (var i = 1; i <= 5; i++) {
+            var b = document.createElement("button");
+            // Setup the position of the buttons
+            var y = 50;
+            if (i <= 2) {
+                x = i*100 + 50;
+            }
+            else {
+                x = (i-2)*100;
+                y += 80; //Move last 3 buttons down to next row
+            }
+            //This is what's displayed in the button (right now just the number)
+            b.innerHTML = "" + i; 
+            b.style.left = x+"px";
+            b.style.top = y+"px";
+            b.pianokey = keysorder[i-1]; //Define our own member variable
+            keys[b.pianokey].load();
+            // to keep track of what piano key this corresponds to
+            b.addEventListener("click", buttonListener);
+            buttons.appendChild(b);
+        }
+
+        // Step 4: Setup an array that holds the results of button presses
+        var hit_keys = [];
+        var hit_times = []
+
+
+    </script>
+</body>
